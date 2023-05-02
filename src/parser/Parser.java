@@ -8,6 +8,20 @@ import inter.stmt.Program;
 import inter.stmt.Stmt;
 import inter.stmt.Block;
 import inter.stmt.Decl;
+import inter.stmt.If;
+
+import inter.stmt.Write;
+
+
+import inter.expr.Bin;
+import inter.expr.Id;
+import inter.expr.Or;
+import inter.expr.Rel;
+
+import inter.Node;
+import inter.expr.Expr;
+import inter.expr.Literal;
+import inter.stmt.Assign;
 
 public class Parser {
     private Lexer lexer;
@@ -42,109 +56,9 @@ public class Parser {
     public void parse() {
         root = program();
     }
-    
-    private void program () {
-        match (Tag.PROGRAM);
-        match (Tag.ID);
-        block ();
-        match (Tag.DOT);
-        match (Tag.EOF);
-    }
-    
-    private void block (){
-        match(Tag.BEGIN);
-        while (look.tag() != Tag.END) {
-                stmt ();
-                match (Tag.SEMI);
-        }
-        match(Tag.END);
-    }
-    
-    private void stmt (){
-        switch (look.tag()) {
-            case BEGIN: block (); break;
-            case INT: case REAL:
-                case BOOL: decl(); break;
-            case ID: assign(); break;
-            case IF: ifStmt(); break;
-            case WRITE: writeStmt(); break;
-            default: error ("Comando inválido");
-        }
-    }
-    
-    private void decl() {
-        move();
-        match(Tag.ID);
-    }
 
-    private void assign(){
-        match(Tag.ID);
-        match (Tag.ASSIGN);
-        expr();
-    }
-
-    private void expr(){
-        rel();
-        while (look.tag() == Tag.OR){
-            move();
-            rel();
-        }
-    }
-
-    private void rel (){
-        arith();
-        while (look.tag() == Tag.LT ||
-                look.tag() == Tag.LE ||
-                look.tag() == Tag.GT) {
-                    move ();
-                    arith();
-                }
-    }
-
-    private void arith () {
-        term();
-        while ( look.tag() == Tag.SUM ||
-                look.tag() == Tag.SUB) {
-                    move();
-                    term();
-                }
-    }
-
-    private void term (){
-        factor();
-        while( look.tag() == Tag.MUL){
-            move();
-            factor();
-        }
-    }
-
-    private void factor (){
-        switch( look.tag() ) {
-        case LPAREN: move(); expr();
-            match(Tag.RPAREN); break;
-        case LIT_INT: move(); break;
-        case LIT_REAL: move(); break;
-        case TRUE: case FALSE:
-            move (); break;
-        case ID: match(Tag.ID); break;
-        default:
-            error("expressão inválida");
-        }
-    }
-
-    private void ifStmt (){
-        match(Tag.IF);
-        match(Tag.LPAREN);
-        expr();
-        match(Tag.RPAREN);
-        stmt();
-    }
-
-    private void writeStmt(){
-        move();
-        match(Tag.LPAREN);
-        match(Tag.ID);
-        match(Tag.RPAREN);
+    public String parserTree(){
+        return root.strTree();
     }
     
 
@@ -158,13 +72,12 @@ public class Parser {
     }
 
     private Stmt block(){
-        Blcok b = new Block();
+        Block b = new Block();
         match(Tag.BEGIN);
         while (look.tag() != Tag.END) {
             b.addStmt(stmt());
             match(Tag.SEMI);
         }
-
         match(Tag.END);
         return b;
     }
@@ -172,8 +85,9 @@ public class Parser {
     private Stmt stmt (){
         switch (look.tag()){
             case BEGIN: return block();
-            case INT: case REAL:
-                case BOLL: return decl();
+            case INT: 
+            case REAL:
+            case BOOL: return decl();
             case WRITE: return writeStmt();
             case ID: return assign();
             case IF: return ifStmt();
@@ -191,10 +105,95 @@ public class Parser {
 
     private Stmt assign() {
         Token tok = match(Tag.ID);
-        Id id = new Id(Tok, null);
+        Id id = new Id(tok, null);
         match(Tag.ASSIGN);
         Expr e = expr();
         return new Assign(id, e);
+    }
+
+    private Stmt ifStmt() {
+        match(Tag.IF);
+        match(Tag.LPAREN);
+        Expr e = expr();
+        match(Tag.RPAREN);
+        Stmt s1 = stmt();
+        return new If(e, s1);
+    }
+
+    private Stmt writeStmt(){
+        move();
+        match(Tag.LPAREN);
+        Token tok = match(Tag.ID);
+        Id id = new Id(tok, null);
+        match(Tag.RPAREN);
+        return new Write(id);
+    }
+
+    private Expr expr() {
+        Expr e = rel();
+        while (look.tag() == Tag.OR){
+            move();
+            e = new Or(e, rel());
+        }
+        return e;
+    }
+
+    private Expr rel() {
+        Expr e = arith();
+        while(  look.tag() == Tag.LT ||
+                look.tag() == Tag.LE ||
+                look.tag() == Tag.GT) {
+            Token op = move();
+            e = new Rel (op, e, arith());
+                }
+        return e;
+    }
+
+    private Expr arith() {
+        Expr e = term();
+        while(  look.tag() == Tag.SUM ||
+                look.tag() == Tag.SUB) {
+            Token op = move();
+            e = new Bin(op, e, term());
+                }
+        return e;
+    }
+
+    private Expr term() {
+        Expr e = factor();
+        while(  look.tag() == Tag.MUL){
+            Token op = move();
+            e = new Bin(op, e, factor());
+        }
+        return e;
+    }
+
+    private Expr factor(){
+        Expr e = null;
+        switch(look.tag()) {
+        case LPAREN: move(); e = expr();
+            match(Tag.RPAREN); break;
+
+        case LIT_INT:
+            e = new Literal(move(), Tag.INT);
+            break;
+
+        case LIT_REAL:
+            e = new Literal(move(), Tag.REAL);
+            break;
+
+        case TRUE: case FALSE:
+            e = new Literal(move(), Tag.BOOL);
+            break;
+
+        case ID:
+            Token tok = match(Tag.ID);
+            e =  new Id(tok, null); break;
+
+        default: error("Expressão Inválida");
+        }
+
+    return e;
     }
 
 }

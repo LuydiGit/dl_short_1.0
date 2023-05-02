@@ -14,6 +14,10 @@ public class DL {
 			Parser p = new Parser(l);
 			p.parse();
 			System.out.println("String aceita com sucesso");
+
+			System.out.println(p.parserTree());
+			System.out.println("Finalizado");
+
 		Token t = l.nextToken();
 		while ( t.tag() != Tag.EOF ) {
 			System.out.println(t);
@@ -21,13 +25,6 @@ public class DL {
 		}
 	}
 }
-
-
-
-
-
-
-
 
 /*public class DL {
 public static void main(String[] args) {

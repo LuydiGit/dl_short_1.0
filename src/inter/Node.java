@@ -13,5 +13,20 @@ public abstract class Node {
         protected LinkedList<Node> children(){
             return children;
         }
+
+        public String strTree() {
+            return strTree("");
+        }
+
+        private String strTree(String ident) {
+            StringBuffer sb = new StringBuffer();
+            sb.append(toString());
+            for( Node n: children()) {
+                sb.append("\n" + ident + "|-->");
+                sb.append(n.strTree(ident + "    "));
+            }
+
+            return sb.toString();
+        }
             
 }
