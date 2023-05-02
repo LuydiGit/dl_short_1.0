@@ -4,11 +4,11 @@ import inter.expr.Id;
 import inter.expr.Expr;
 import lexer.Tag;
 
-public class Assing extends Stmt{
+public class Assign extends Stmt{
     protected Id id;
     protected Expr expr;
 
-    public Assing (Id i, Expr e){
+    public Assign (Id i, Expr e){
         id = i;
         expr = e;
         addChild(id);
