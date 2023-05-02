@@ -7,6 +7,7 @@ import lexer.Token;
 public class Parser {
     private Lexer lexer;
     private Token look;
+    private Node root;
 
     public Parser (Lexer lex) {
         lexer = lex;
@@ -34,7 +35,7 @@ public class Parser {
     }
     
     public void parse() {
-        program();
+        root = program();
     }
     
     private void program () {
