@@ -4,6 +4,11 @@ import lexer.Lexer;
 import lexer.Tag;
 import lexer.Token;
 
+import inter.stmt.Program;
+import inter.stmt.Stmt;
+import inter.stmt.Block;
+import inter.stmt.Decl;
+
 public class Parser {
     private Lexer lexer;
     private Token look;
@@ -140,6 +145,56 @@ public class Parser {
         match(Tag.LPAREN);
         match(Tag.ID);
         match(Tag.RPAREN);
+    }
+    
+
+    private Program program (){
+        match(Tag.PROGRAM);
+        Token tokId = match(Tag.ID);
+        Stmt b = block();
+        match(Tag.DOT);
+        match(Tag.EOF);
+        return new Program(tokId, (Block)b);
+    }
+
+    private Stmt block(){
+        Blcok b = new Block();
+        match(Tag.BEGIN);
+        while (look.tag() != Tag.END) {
+            b.addStmt(stmt());
+            match(Tag.SEMI);
+        }
+
+        match(Tag.END);
+        return b;
+    }
+
+    private Stmt stmt (){
+        switch (look.tag()){
+            case BEGIN: return block();
+            case INT: case REAL:
+                case BOLL: return decl();
+            case WRITE: return writeStmt();
+            case ID: return assign();
+            case IF: return ifStmt();
+            default: error ("Comando inválido");
+        }
+        return null;
+    }
+
+    private Stmt decl() {
+        Token type = move();
+        Token tokId = match(Tag.ID);
+        Id id =  new Id(tokId, type.tag());
+        return new Decl(id);
+    }
+
+    private Stmt assign() {
+        Token tok = match(Tag.ID);
+        Id id = new Id(Tok, null);
+        match(Tag.ASSIGN);
+        Expr e = expr();
+        return new Assign(id, e);
     }
 
 }
